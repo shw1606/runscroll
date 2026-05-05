@@ -73,6 +73,7 @@ class Collector:
         self._section_depth = 0
         self._section_seq = 0
         self._asset_seq = 0
+        self._plotly_bundle_emitted = False
         self._write_header()
 
     def _write_header(self) -> None:
@@ -176,38 +177,93 @@ class Collector:
         self._check_open()
         cls = type(fig)
         if cls.__module__.startswith("matplotlib."):
-            try:
-                from .adapters.matplotlib import close_figure, fig_to_png_bytes
-            except ImportError as e:
-                raise ImportError(
-                    "add_figure(matplotlib Figure) requires matplotlib; "
-                    "install with `pip install runscroll[matplotlib]`"
-                ) from e
-            png = fig_to_png_bytes(fig)
-            if close:
-                close_figure(fig)
-            if self.mode == "inline":
-                write_figure_png_inline(
-                    self._file, png, title=title, description=description
-                )
-            else:
-                self._asset_seq += 1
-                write_figure_png_directory(
-                    self._file,
-                    png,
-                    self._asset_writer,
-                    self._asset_seq,
-                    title=title,
-                    description=description,
-                )
-            del png  # release the PNG bytes promptly
+            self._add_matplotlib_figure(
+                fig, title=title, description=description, close=close
+            )
+        elif cls.__module__.startswith("plotly."):
+            self._add_plotly_figure(fig, title=title, description=description)
         else:
             raise TypeError(
-                "add_figure: fig must be a matplotlib Figure (plotly/bokeh "
-                f"come in later steps); got {type(fig).__name__}"
+                "add_figure: fig must be a matplotlib Figure or a plotly "
+                f"Figure (bokeh planned for later); got {type(fig).__name__}"
             )
         self._file.flush()
         self._entry_count += 1
+
+    def _add_matplotlib_figure(
+        self, fig: Any, title: str, description: str, close: bool
+    ) -> None:
+        try:
+            from .adapters.matplotlib import close_figure, fig_to_png_bytes
+        except ImportError as e:
+            raise ImportError(
+                "add_figure(matplotlib Figure) requires matplotlib; "
+                "install with `pip install runscroll[matplotlib]`"
+            ) from e
+        png = fig_to_png_bytes(fig)
+        if close:
+            close_figure(fig)
+        if self.mode == "inline":
+            write_figure_png_inline(
+                self._file, png, title=title, description=description
+            )
+        else:
+            self._asset_seq += 1
+            write_figure_png_directory(
+                self._file,
+                png,
+                self._asset_writer,
+                self._asset_seq,
+                title=title,
+                description=description,
+            )
+        del png
+
+    def _add_plotly_figure(
+        self, fig: Any, title: str, description: str
+    ) -> None:
+        try:
+            from .adapters.plotly import (
+                figure_to_html_div_only,
+                figure_to_html_with_inline_bundle,
+                get_plotlyjs_bundle,
+            )
+        except ImportError as e:
+            raise ImportError(
+                "add_figure(plotly Figure) requires plotly; "
+                "install with `pip install runscroll[plotly]`"
+            ) from e
+
+        # Open the figure block.
+        self._file.write('<div class="rs-entry rs-figure rs-figure-plotly">')
+        if title:
+            self._file.write(
+                f'<div class="rs-figure-title">{html.escape(title)}</div>'
+            )
+        if description:
+            self._file.write(
+                f'<div class="rs-figure-description">{html.escape(description)}</div>'
+            )
+
+        if self.mode == "inline":
+            if not self._plotly_bundle_emitted:
+                self._file.write(figure_to_html_with_inline_bundle(fig))
+                self._plotly_bundle_emitted = True
+            else:
+                self._file.write(figure_to_html_div_only(fig))
+        else:  # directory
+            if not self._plotly_bundle_emitted:
+                bundle = get_plotlyjs_bundle()
+                self._asset_writer.write(
+                    "assets/plotly.min.js", bundle.encode("utf-8")
+                )
+                self._file.write(
+                    '<script src="assets/plotly.min.js"></script>'
+                )
+                self._plotly_bundle_emitted = True
+            self._file.write(figure_to_html_div_only(fig))
+
+        self._file.write("</div>\n")
 
     # ------------------------------------------------------------------
     # Sections

@@ -1,9 +1,10 @@
 """Inline mode self-containment guarantees (handoff §6.1, §11.2).
 
 A runscroll inline-mode HTML report must work fully when opened from disk
-with no network: no external stylesheets, no remote scripts, no remote
-images, no `@import` chains, no CDN fetches. These tests enforce that
-contract by parsing the rendered HTML.
+with no network: no tag attribute (src / href / srcset / cite / etc.) may
+reference a remote URL. We make the check on the document with <script>
+and <style> bodies stripped — string literals inside JS or CSS that
+happen to look like 'href="https://"' are not network refs.
 """
 from __future__ import annotations
 
@@ -12,6 +13,20 @@ import re
 import pytest
 
 from runscroll import Collector
+
+_SCRIPT_OR_STYLE = re.compile(
+    r"<(script|style)\b[^>]*>.*?</\1>", flags=re.DOTALL | re.IGNORECASE
+)
+
+
+def _strip_scripts_and_styles(html_str: str) -> str:
+    """Return the HTML with the *contents* of every <script>...</script>
+    and <style>...</style> block removed (the tags stay; just the text
+    between them is dropped). Self-containment cares about HTML
+    attributes; string literals inside scripts are not network refs."""
+    return _SCRIPT_OR_STYLE.sub(
+        lambda m: f"<{m.group(1)}></{m.group(1)}>", html_str
+    )
 
 
 @pytest.fixture
@@ -35,15 +50,31 @@ def test_no_external_script_src(rendered):
     assert re.search(r"<script\b[^>]*\bsrc=", rendered) is None
 
 
-def test_no_remote_urls(rendered):
-    # No http(s):// references anywhere in the document.
-    assert "http://" not in rendered
-    assert "https://" not in rendered
+def test_no_attribute_references_remote_url(rendered):
+    """The actual self-containment contract: no tag attribute (src/href/
+    srcset/cite/action/data-src) references an http(s):// URL.
+
+    Strings inside <script> or <style> blocks are stripped before the
+    check — they're bundle content, not network refs.
+    """
+    stripped = _strip_scripts_and_styles(rendered)
+    pattern = re.compile(
+        r'(?:src|href|srcset|cite|action|data-src)\s*=\s*["\']https?://',
+        re.IGNORECASE,
+    )
+    assert pattern.search(stripped) is None
 
 
-def test_no_css_imports(rendered):
-    # @import inside the inlined <style> would also pull external resources.
-    assert "@import" not in rendered
+def test_no_css_imports_or_url_refs_to_remote(rendered):
+    """@import / url() inside the inline <style> block must not reference
+    remote resources. (We do NOT strip <style> here because that's where
+    these patterns would actually have effect.)"""
+    # Inline <style> block is the one we own; check it.
+    m = re.search(r"<style>(.*?)</style>", rendered, flags=re.DOTALL)
+    assert m, "expected an inline <style> block"
+    css = m.group(1)
+    assert re.search(r"@import\s+(?:url\()?\s*['\"]?https?://", css) is None
+    assert re.search(r"\burl\(\s*['\"]?https?://", css) is None
 
 
 def test_inline_style_block_present_and_substantial(rendered):

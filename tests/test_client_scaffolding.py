@@ -139,8 +139,18 @@ def test_js_syntax_validates_with_node_if_available(tmp_path):
 
 def test_no_external_refs_after_step9(tmp_path):
     html_str = _render(tmp_path)
-    assert "http://" not in html_str
-    assert "https://" not in html_str
-    assert "@import" not in html_str
+    # Step 9 emits no plotly or other heavy bundles, so we can do the
+    # attribute check directly on the raw HTML — there are no <script>
+    # / <style> bodies that contain incidental URL strings.
+    pattern = re.compile(
+        r'(?:src|href|srcset|cite|action|data-src)\s*=\s*["\']https?://',
+        re.IGNORECASE,
+    )
+    assert pattern.search(html_str) is None
+    # Inline <style> block must not @import or url() remote resources.
+    style = re.search(r"<style>(.*?)</style>", html_str, flags=re.DOTALL).group(1)
+    assert re.search(r"@import\s+(?:url\()?\s*['\"]?https?://", style) is None
+    assert re.search(r"\burl\(\s*['\"]?https?://", style) is None
+    # Step 9 doesn't introduce any <link href> or <script src> at all.
     assert re.search(r"<link\b[^>]*\bhref=", html_str) is None
     assert re.search(r"<script\b[^>]*\bsrc=", html_str) is None

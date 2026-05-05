@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "runscroll"
+version = "0.0.1"
+description = "Turn one batch run into one scrollable HTML report."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["report", "html", "batch", "post-mortem", "logging", "etl", "ml"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Logging",
+]
+dependencies = []
+
+[project.optional-dependencies]
+# Adapter extras — each pulled in only when that adapter is used.
+matplotlib = ["matplotlib>=3.5"]
+plotly = ["plotly>=5.0"]
+pandas = ["pandas>=1.3"]
+pil = ["Pillow>=9.0"]
+pygments = ["Pygments>=2.10"]
+
+# Development extras — tests + memory measurement.
+dev = [
+    "pytest>=7.0",
+    "psutil>=5.9",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/runscroll"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

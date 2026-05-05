@@ -3,13 +3,16 @@
 The single most important architectural decision (handoff §5):
 **no in-memory entry buffer.** Each ``add_*`` call serializes its content to
 the output file and flushes immediately. The Python-side state is just
-counters and a file handle — a few KB regardless of report size.
+counters, a section depth counter, and a file handle — a few KB regardless
+of report size.
 """
 from __future__ import annotations
 
 import html
+import traceback
 from pathlib import Path
-from typing import Any, Literal, Mapping, Sequence, Union
+from types import TracebackType
+from typing import Any, Literal, Mapping, Optional, Sequence, Type, Union
 
 from ._image import write_figure_png, write_image
 from ._render import render_footer, render_header
@@ -33,13 +36,17 @@ class Collector:
         self,
         path: Union[str, Path],
         title: str = "Run report",
+        log_exceptions: bool = True,
     ) -> None:
         self.path = Path(path)
         self.title = title
+        self._log_exceptions = log_exceptions
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._file = self.path.open("w", encoding="utf-8")
         self._closed = False
         self._entry_count = 0
+        self._section_depth = 0
+        self._section_seq = 0
         self._write_header()
 
     def _write_header(self) -> None:
@@ -150,6 +157,74 @@ class Collector:
         self._file.flush()
         self._entry_count += 1
 
+    # ------------------------------------------------------------------
+    # Sections
+    # ------------------------------------------------------------------
+
+    def section(self, name: str) -> "SectionContext":
+        """Return a context manager opening a (possibly nested) section."""
+        self._check_open()
+        return SectionContext(self, name)
+
+    def _open_section(self, name: str) -> None:
+        self._check_open()
+        self._section_depth += 1
+        self._section_seq += 1
+        section_id = self._section_seq
+        safe = html.escape(name)
+        # h-level: nested sections clamp at h6 to stay valid HTML.
+        h_level = min(self._section_depth + 1, 6)
+        self._file.write(
+            f'<section class="rs-section" data-rs-section-id="{section_id}" '
+            f'data-rs-section-name="{safe}" data-rs-depth="{self._section_depth}" '
+            f'id="rs-section-{section_id}">'
+            f'<header class="rs-section-header">'
+            f'<h{h_level} class="rs-section-title">{safe}</h{h_level}>'
+            f"</header>"
+            f'<div class="rs-section-body">\n'
+        )
+        self._file.flush()
+
+    def _close_section(self) -> None:
+        if self._section_depth <= 0:
+            return
+        self._file.write("</div></section>\n")
+        self._file.flush()
+        self._section_depth -= 1
+
+    # ------------------------------------------------------------------
+    # Context manager + finalize
+    # ------------------------------------------------------------------
+
+    def __enter__(self) -> "Collector":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> Literal[False]:
+        # If the user-provided block raised, optionally log it as an error
+        # entry before closing — best-effort, never re-raises.
+        if exc_type is not None and not self._closed and self._log_exceptions:
+            try:
+                tb_str = "".join(traceback.format_exception(exc_type, exc_val, tb))
+                self.add_text(tb_str, level="error")
+            except Exception:
+                pass
+        # Close any sections the user opened but didn't close.
+        while self._section_depth > 0:
+            try:
+                self._close_section()
+            except Exception:
+                break
+        try:
+            self.save()
+        except Exception:
+            pass
+        return False  # never swallow
+
     def save(self) -> str:
         """Write the closing tags, close the file, return the final path."""
         if self._closed:
@@ -160,8 +235,8 @@ class Collector:
         return str(self.path)
 
     def __del__(self) -> None:
-        # Best-effort cleanup. Users should call save() or (from Step 8) use
-        # the Collector as a context manager.
+        # Best-effort cleanup. Users should call save() or use the Collector
+        # as a context manager.
         f = getattr(self, "_file", None)
         if f is not None and not getattr(self, "_closed", True):
             try:
@@ -169,3 +244,31 @@ class Collector:
                     f.close()
             except Exception:
                 pass
+
+
+class SectionContext:
+    """Context manager returned by ``Collector.section(name)``.
+
+    Sections are opened/closed via the Collector so the file always sees
+    matched ``<section>`` tags, even when user code raises inside the block —
+    the Collector's ``__exit__`` walks any unclosed sections shut.
+    """
+
+    __slots__ = ("_collector", "name")
+
+    def __init__(self, collector: "Collector", name: str) -> None:
+        self._collector = collector
+        self.name = name
+
+    def __enter__(self) -> "SectionContext":
+        self._collector._open_section(self.name)
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        tb: Optional[TracebackType],
+    ) -> Literal[False]:
+        self._collector._close_section()
+        return False  # never swallow

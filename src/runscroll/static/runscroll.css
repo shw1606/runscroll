@@ -211,3 +211,34 @@ html, body {
   border-radius: 4px;
   background: #fff;  /* matplotlib default white facecolor */
 }
+
+/* Sections — nested, indented by depth via padding. */
+.rs-section {
+  margin: 18px 0;
+  border-left: 2px solid var(--rs-border);
+  padding-left: 14px;
+}
+
+.rs-section[data-rs-depth="1"] { border-left-color: var(--rs-accent); }
+
+.rs-section-header {
+  margin: 0 0 8px;
+}
+
+.rs-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.005em;
+}
+
+.rs-section[data-rs-depth="2"] .rs-section-title { font-size: 0.98rem; }
+.rs-section[data-rs-depth="3"] .rs-section-title { font-size: 0.93rem; }
+.rs-section[data-rs-depth="4"] .rs-section-title,
+.rs-section[data-rs-depth="5"] .rs-section-title,
+.rs-section[data-rs-depth="6"] .rs-section-title { font-size: 0.9rem; color: var(--rs-fg-dim); }
+
+.rs-section-body {
+  /* Children are entries — they already have their own margins. */
+}

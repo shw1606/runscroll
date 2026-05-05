@@ -11,7 +11,7 @@ import html
 from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence, Union
 
-from ._image import write_image
+from ._image import write_figure_png, write_image
 from ._render import render_footer, render_header
 from .entries import render_code, render_kv, render_table
 
@@ -107,6 +107,46 @@ class Collector:
         so peak memory stays bounded regardless of image size."""
         self._check_open()
         write_image(self._file, source, title=title, caption=caption)
+        self._file.flush()
+        self._entry_count += 1
+
+    def add_figure(
+        self,
+        fig: Any,
+        title: str = "",
+        description: str = "",
+        close: bool = True,
+    ) -> None:
+        """Append a figure entry.
+
+        Currently supports matplotlib Figures. Plotly and Bokeh are added
+        in later steps. ``close=True`` (default) releases the figure's
+        resources after encoding — the moulder pipeline that seeded
+        runscroll consistently followed every save with ``plt.close(fig)``,
+        so we absorb that pattern.
+        """
+        self._check_open()
+        cls = type(fig)
+        if cls.__module__.startswith("matplotlib."):
+            try:
+                from .adapters.matplotlib import close_figure, fig_to_png_bytes
+            except ImportError as e:
+                raise ImportError(
+                    "add_figure(matplotlib Figure) requires matplotlib; "
+                    "install with `pip install runscroll[matplotlib]`"
+                ) from e
+            png = fig_to_png_bytes(fig)
+            if close:
+                close_figure(fig)
+            write_figure_png(
+                self._file, png, title=title, description=description
+            )
+            del png  # release the PNG bytes promptly
+        else:
+            raise TypeError(
+                "add_figure: fig must be a matplotlib Figure (plotly/bokeh "
+                f"come in later steps); got {type(fig).__name__}"
+            )
         self._file.flush()
         self._entry_count += 1
 

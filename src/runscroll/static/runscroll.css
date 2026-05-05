@@ -183,3 +183,31 @@ html, body {
   font-size: 0.85rem;
   font-family: var(--rs-mono);
 }
+
+/* Figure entry (matplotlib raster path; plotly is interactive, separate). */
+.rs-figure {
+  background: var(--rs-bg-elev);
+  border-radius: var(--rs-radius);
+  padding: 12px 14px;
+}
+
+.rs-figure-title {
+  font-weight: 600;
+  margin: 2px 0 4px;
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.rs-figure-description {
+  margin: 0 0 10px;
+  color: var(--rs-fg-dim);
+  font-size: 0.85rem;
+}
+
+.rs-figure img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  background: #fff;  /* matplotlib default white facecolor */
+}

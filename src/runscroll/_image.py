@@ -84,6 +84,15 @@ def _open_source(source: Any) -> Tuple[BinaryIO, str, Optional[BinaryIO]]:
     )
 
 
+def _stream_b64(file_obj: TextIO, src: BinaryIO) -> None:
+    """Stream-encode src as base64 into file_obj. Peak transient is one chunk."""
+    while True:
+        chunk = src.read(_B64_CHUNK)
+        if not chunk:
+            break
+        file_obj.write(base64.b64encode(chunk).decode("ascii"))
+
+
 def write_image(
     file_obj: TextIO,
     source: Any,
@@ -100,11 +109,7 @@ def write_image(
             )
         alt = _html.escape(caption or title)
         file_obj.write(f'<img alt="{alt}" src="data:image/{fmt};base64,')
-        while True:
-            chunk = src.read(_B64_CHUNK)
-            if not chunk:
-                break
-            file_obj.write(base64.b64encode(chunk).decode("ascii"))
+        _stream_b64(file_obj, src)
         file_obj.write('">')
         if caption:
             file_obj.write(
@@ -114,3 +119,30 @@ def write_image(
     finally:
         if owned is not None:
             owned.close()
+
+
+def write_figure_png(
+    file_obj: TextIO,
+    png_bytes: bytes,
+    title: str = "",
+    description: str = "",
+) -> None:
+    """Stream-write a figure entry from already-encoded PNG bytes.
+
+    Used by raster-based figure adapters (matplotlib for now). Plotly's
+    interactive embedding goes through a different path (Step 11).
+    """
+    file_obj.write('<div class="rs-entry rs-figure">')
+    if title:
+        file_obj.write(
+            f'<div class="rs-figure-title">{_html.escape(title)}</div>'
+        )
+    if description:
+        file_obj.write(
+            f'<div class="rs-figure-description">{_html.escape(description)}</div>'
+        )
+    alt = _html.escape(title or "figure")
+    file_obj.write(f'<img alt="{alt}" src="data:image/png;base64,')
+    _stream_b64(file_obj, io.BytesIO(png_bytes))
+    file_obj.write('">')
+    file_obj.write("</div>\n")

@@ -9,9 +9,10 @@ from __future__ import annotations
 
 import html
 from pathlib import Path
-from typing import Literal, Union
+from typing import Any, Literal, Mapping, Sequence, Union
 
 from ._render import render_footer, render_header
+from .entries import render_code, render_kv, render_table
 
 TextLevel = Literal["info", "debug", "warning", "error", "success"]
 
@@ -65,6 +66,32 @@ class Collector:
         self._file.write(
             f'<div class="rs-entry rs-text rs-text-{level}">{safe}</div>\n'
         )
+        self._file.flush()
+        self._entry_count += 1
+
+    def add_kv(self, mapping: Mapping[str, Any], title: str = "") -> None:
+        """Append a two-column key/value table."""
+        self._check_open()
+        self._file.write(render_kv(mapping, title=title))
+        self._file.flush()
+        self._entry_count += 1
+
+    def add_code(self, code: str, lang: str = "", title: str = "") -> None:
+        """Append a code block. ``lang`` is recorded as ``data-rs-lang`` for
+        future syntax-highlighting hooks; no highlighting is applied here."""
+        self._check_open()
+        self._file.write(render_code(code, lang=lang, title=title))
+        self._file.flush()
+        self._entry_count += 1
+
+    def add_table(self, data: Sequence[Any], title: str = "") -> None:
+        """Append a tabular entry from a list of dicts or list of lists.
+
+        pandas DataFrame support is provided by the pandas adapter
+        (separate optional dependency); this stdlib path covers the
+        common log-friendly shapes."""
+        self._check_open()
+        self._file.write(render_table(data, title=title))
         self._file.flush()
         self._entry_count += 1
 

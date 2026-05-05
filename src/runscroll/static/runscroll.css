@@ -84,3 +84,74 @@ html, body {
 .rs-text-warning { border-left-color: var(--rs-warning); color: var(--rs-warning); }
 .rs-text-error   { border-left-color: var(--rs-error);   color: var(--rs-error); }
 .rs-text-success { border-left-color: var(--rs-success); color: var(--rs-success); }
+
+/* Shared frame for kv / code / table entries. */
+.rs-kv, .rs-code, .rs-table {
+  background: var(--rs-bg-elev);
+  border-radius: var(--rs-radius);
+  padding: 12px 14px;
+}
+
+.rs-kv-title, .rs-code-title, .rs-table-title {
+  font-weight: 600;
+  margin: 2px 0 10px;
+  color: #fff;
+  font-size: 0.92rem;
+  letter-spacing: 0.005em;
+}
+
+/* Key/value table. */
+.rs-kv-table {
+  border-collapse: collapse;
+  font-family: var(--rs-mono);
+  font-size: 0.85rem;
+}
+
+.rs-kv-table th,
+.rs-kv-table td {
+  padding: 3px 16px 3px 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rs-kv-table th {
+  color: var(--rs-fg-dim);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Code block. */
+.rs-code pre {
+  margin: 0;
+  font-family: var(--rs-mono);
+  font-size: 0.85rem;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--rs-fg);
+}
+
+/* Data table. */
+.rs-data-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--rs-mono);
+  font-size: 0.84rem;
+}
+
+.rs-data-table th,
+.rs-data-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--rs-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rs-data-table thead th {
+  color: var(--rs-fg-dim);
+  font-weight: 600;
+  background: var(--rs-bg-elev-2);
+}
+
+.rs-data-table tbody tr:last-child td {
+  border-bottom: none;
+}

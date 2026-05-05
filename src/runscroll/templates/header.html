@@ -10,7 +10,30 @@ __RUNSCROLL_CSS__
 </head>
 <body>
 <header class="rs-header">
-<h1>__RUNSCROLL_TITLE__</h1>
-<div class="rs-meta" data-rs-meta="generated"></div>
+  <div class="rs-header-row">
+    <div class="rs-header-titles">
+      <h1>__RUNSCROLL_TITLE__</h1>
+      <div class="rs-meta" data-rs-meta="generated"></div>
+    </div>
+    <div class="rs-controls">
+      <input type="search" class="rs-search" placeholder="Search entries…" aria-label="Search entries">
+      <button class="rs-theme-toggle" type="button" aria-label="Toggle dark/light theme" title="Toggle theme">☾</button>
+    </div>
+  </div>
+  <div class="rs-header-row rs-header-row-secondary">
+    <div class="rs-level-filter" role="group" aria-label="Level filter"></div>
+    <div class="rs-badges" aria-live="polite">
+      <span class="rs-badge rs-badge-error" data-rs-count="error" hidden></span>
+      <span class="rs-badge rs-badge-warning" data-rs-count="warning" hidden></span>
+    </div>
+  </div>
 </header>
+<button class="rs-toc-toggle" type="button" aria-label="Toggle table of contents" title="Toggle TOC" hidden>≡ TOC</button>
+<aside class="rs-toc-panel" hidden>
+  <div class="rs-toc-panel-header">
+    <strong>Contents</strong>
+    <button class="rs-toc-close" type="button" aria-label="Close TOC">×</button>
+  </div>
+  <nav class="rs-toc-nav" aria-label="Table of contents"></nav>
+</aside>
 <main class="rs-content">

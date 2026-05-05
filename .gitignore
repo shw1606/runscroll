@@ -1,0 +1,37 @@
+# Documentation, planning, work logs — kept locally, not in repo
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build/
+dist/
+.eggs/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# runscroll temp outputs from manual runs / examples
+/tmp_reports/
+*.local.html

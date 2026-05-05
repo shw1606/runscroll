@@ -35,3 +35,4 @@ ENV/
 # runscroll temp outputs from manual runs / examples
 /tmp_reports/
 *.local.html
+examples/out/

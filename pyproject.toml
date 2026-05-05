@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "runscroll"
-version = "0.0.1"
+version = "0.1.0"
 description = "Turn one batch run into one scrollable HTML report."
 readme = "README.md"
 requires-python = ">=3.9"

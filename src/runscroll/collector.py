@@ -11,6 +11,8 @@ import html
 from pathlib import Path
 from typing import Literal, Union
 
+from ._render import render_footer, render_header
+
 TextLevel = Literal["info", "debug", "warning", "error", "success"]
 
 _VALID_LEVELS = frozenset(("info", "debug", "warning", "error", "success"))
@@ -39,25 +41,11 @@ class Collector:
         self._write_header()
 
     def _write_header(self) -> None:
-        title_safe = html.escape(self.title)
-        self._file.write(
-            "<!DOCTYPE html>\n"
-            '<html lang="en">\n'
-            "<head>\n"
-            '<meta charset="UTF-8">\n'
-            '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-            f"<title>{title_safe}</title>\n"
-            "</head>\n"
-            "<body>\n"
-            '<header class="rs-header">\n'
-            f"<h1>{title_safe}</h1>\n"
-            "</header>\n"
-            '<main class="rs-content">\n'
-        )
+        self._file.write(render_header(self.title))
         self._file.flush()
 
     def _write_footer(self) -> None:
-        self._file.write("</main>\n</body>\n</html>\n")
+        self._file.write(render_footer())
         self._file.flush()
 
     def _check_open(self) -> None:

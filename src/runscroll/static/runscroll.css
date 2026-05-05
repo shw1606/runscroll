@@ -1,0 +1,86 @@
+/* runscroll — inline stylesheet (no external refs).
+ * Dark theme by default. Layout is single column, scrollable. The whole report
+ * is meant to be read top-to-bottom, hence the name. */
+
+:root {
+  --rs-bg: #1a1d21;
+  --rs-bg-elev: #22262c;
+  --rs-bg-elev-2: #2a2f36;
+  --rs-fg: #d8dde3;
+  --rs-fg-dim: #98a0aa;
+  --rs-border: #34393f;
+  --rs-accent: #6aa1ea;
+  --rs-info: #6aa1ea;
+  --rs-debug: #9cdcfe;
+  --rs-warning: #e2c067;
+  --rs-error: #ee5e5e;
+  --rs-success: #5fc7a4;
+  --rs-radius: 6px;
+  --rs-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+  --rs-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+             "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--rs-bg);
+  color: var(--rs-fg);
+  font-family: var(--rs-sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.rs-header {
+  padding: 24px 32px 18px;
+  border-bottom: 1px solid var(--rs-border);
+  background: linear-gradient(180deg, var(--rs-bg-elev), var(--rs-bg));
+}
+
+.rs-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.rs-meta {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--rs-fg-dim);
+  font-family: var(--rs-mono);
+}
+
+.rs-content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+
+/* Generic entry frame (every add_* output gets this class). */
+.rs-entry {
+  margin: 10px 0;
+}
+
+/* Text entries — colored left border per level. */
+.rs-text {
+  padding: 10px 14px;
+  border-radius: var(--rs-radius);
+  background: var(--rs-bg-elev);
+  border-left: 3px solid var(--rs-info);
+  font-family: var(--rs-mono);
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.rs-text-info    { border-left-color: var(--rs-info); }
+.rs-text-debug   { border-left-color: var(--rs-debug);   color: var(--rs-debug); }
+.rs-text-warning { border-left-color: var(--rs-warning); color: var(--rs-warning); }
+.rs-text-error   { border-left-color: var(--rs-error);   color: var(--rs-error); }
+.rs-text-success { border-left-color: var(--rs-success); color: var(--rs-success); }

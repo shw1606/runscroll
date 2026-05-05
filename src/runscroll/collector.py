@@ -11,6 +11,7 @@ import html
 from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence, Union
 
+from ._image import write_image
 from ._render import render_footer, render_header
 from .entries import render_code, render_kv, render_table
 
@@ -92,6 +93,20 @@ class Collector:
         common log-friendly shapes."""
         self._check_open()
         self._file.write(render_table(data, title=title))
+        self._file.flush()
+        self._entry_count += 1
+
+    def add_image(
+        self,
+        source: Any,
+        caption: str = "",
+        title: str = "",
+    ) -> None:
+        """Append an image entry. ``source`` can be bytes, a file path,
+        a PIL Image, or a numpy ndarray. Base64 is streamed chunk-by-chunk
+        so peak memory stays bounded regardless of image size."""
+        self._check_open()
+        write_image(self._file, source, title=title, caption=caption)
         self._file.flush()
         self._entry_count += 1
 

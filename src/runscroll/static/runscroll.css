@@ -155,3 +155,31 @@ html, body {
 .rs-data-table tbody tr:last-child td {
   border-bottom: none;
 }
+
+/* Image entry. */
+.rs-image {
+  background: var(--rs-bg-elev);
+  border-radius: var(--rs-radius);
+  padding: 12px 14px;
+}
+
+.rs-image img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
+
+.rs-image-title {
+  font-weight: 600;
+  margin: 2px 0 10px;
+  color: #fff;
+  font-size: 0.92rem;
+}
+
+.rs-image-caption {
+  margin-top: 8px;
+  color: var(--rs-fg-dim);
+  font-size: 0.85rem;
+  font-family: var(--rs-mono);
+}

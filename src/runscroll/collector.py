@@ -14,8 +14,14 @@ from pathlib import Path
 from types import TracebackType
 from typing import Any, Literal, Mapping, Optional, Sequence, Type, Union
 
-from ._image import write_figure_png, write_image
+from ._image import (
+    write_figure_png_directory,
+    write_figure_png_inline,
+    write_image_directory,
+    write_image_inline,
+)
 from ._render import render_footer, render_header
+from .asset_writer import AssetWriter, LocalAssetWriter
 from .entries import render_code, render_kv, render_table
 
 TextLevel = Literal["info", "debug", "warning", "error", "success"]
@@ -36,17 +42,37 @@ class Collector:
         self,
         path: Union[str, Path],
         title: str = "Run report",
+        mode: Literal["inline", "directory"] = "inline",
+        asset_writer: Optional[AssetWriter] = None,
         log_exceptions: bool = True,
     ) -> None:
+        if mode not in ("inline", "directory"):
+            raise ValueError(
+                f"mode must be 'inline' or 'directory', got {mode!r}"
+            )
         self.path = Path(path)
         self.title = title
+        self.mode = mode
         self._log_exceptions = log_exceptions
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self._file = self.path.open("w", encoding="utf-8")
+        self._asset_writer: Optional[AssetWriter]
+        if mode == "inline":
+            if asset_writer is not None:
+                raise ValueError(
+                    "asset_writer is only meaningful in directory mode"
+                )
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self._html_path = self.path
+            self._asset_writer = None
+        else:  # directory
+            self.path.mkdir(parents=True, exist_ok=True)
+            self._html_path = self.path / "index.html"
+            self._asset_writer = asset_writer or LocalAssetWriter(self.path)
+        self._file = self._html_path.open("w", encoding="utf-8")
         self._closed = False
         self._entry_count = 0
         self._section_depth = 0
         self._section_seq = 0
+        self._asset_seq = 0
         self._write_header()
 
     def _write_header(self) -> None:
@@ -110,10 +136,25 @@ class Collector:
         title: str = "",
     ) -> None:
         """Append an image entry. ``source`` can be bytes, a file path,
-        a PIL Image, or a numpy ndarray. Base64 is streamed chunk-by-chunk
-        so peak memory stays bounded regardless of image size."""
+        a PIL Image, or a numpy ndarray.
+
+        In inline mode, base64 is streamed chunk-by-chunk into the HTML.
+        In directory mode, asset bytes are handed to the AssetWriter and
+        the HTML embeds a relative URL.
+        """
         self._check_open()
-        write_image(self._file, source, title=title, caption=caption)
+        if self.mode == "inline":
+            write_image_inline(self._file, source, title=title, caption=caption)
+        else:
+            self._asset_seq += 1
+            write_image_directory(
+                self._file,
+                source,
+                self._asset_writer,
+                self._asset_seq,
+                title=title,
+                caption=caption,
+            )
         self._file.flush()
         self._entry_count += 1
 
@@ -145,9 +186,20 @@ class Collector:
             png = fig_to_png_bytes(fig)
             if close:
                 close_figure(fig)
-            write_figure_png(
-                self._file, png, title=title, description=description
-            )
+            if self.mode == "inline":
+                write_figure_png_inline(
+                    self._file, png, title=title, description=description
+                )
+            else:
+                self._asset_seq += 1
+                write_figure_png_directory(
+                    self._file,
+                    png,
+                    self._asset_writer,
+                    self._asset_seq,
+                    title=title,
+                    description=description,
+                )
             del png  # release the PNG bytes promptly
         else:
             raise TypeError(

@@ -77,6 +77,9 @@ dev = [
     "psutil>=5.9",
 ]
 
+[project.scripts]
+runscroll = "runscroll.__main__:main"
+
 [project.urls]
 # These point at the GitHub repo where the package lives. Image refs in
 # README.md resolve relative to "Repository" on the rendered PyPI page.

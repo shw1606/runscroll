@@ -1,0 +1,28 @@
+# runscroll
+
+> Single-file scrollable HTML report for one-shot batch jobs (ETL, ML training, data migrations, crawlers). Streaming append-write — RAM stays flat regardless of report size. No server. No infrastructure.
+
+runscroll is a small, opinionated Python library: drop `report.add_*()` calls into your batch script, get one self-contained HTML file out the other side. Mail it, drop it in S3, attach it to a PR. The whole API is one class with eight methods.
+
+## Documentation
+
+- [README.md](README.md): When-to-use table, 30-second example, full API surface, output modes (inline / directory / AssetWriter), recipes per scenario, "what this is NOT" anti-comparison.
+- [AGENTS.md](AGENTS.md): Integration guide written for AI coding assistants — canonical pattern, common mistakes to avoid, dispatch internals, stability promise.
+- [CHANGELOG.md](CHANGELOG.md): Version history.
+
+## API
+
+- [src/runscroll/collector.py](src/runscroll/collector.py): The `Collector` class — single entry point. `add_text` / `add_kv` / `add_code` / `add_table` / `add_image` / `add_figure` / `section`.
+- [src/runscroll/asset_writer.py](src/runscroll/asset_writer.py): `AssetWriter` Protocol + `LocalAssetWriter` for plugging in cloud storage in directory mode.
+
+## Examples
+
+- [examples/ml_training_run.py](examples/ml_training_run.py): ML training post-mortem — loss curves, confusion matrix, per-class metrics table, sample worst-prediction images. Exercises matplotlib + numpy + PIL.
+- [examples/data_quality_etl.py](examples/data_quality_etl.py): Daily ETL — hourly volume, drop-rate warning with sample dropped rows, post-clean distribution. Matplotlib only.
+- [examples/migration_validation.py](examples/migration_validation.py): Database migration validation with **interactive plotly distributions** — zoom / pan / hover, all in the single self-contained file.
+- [examples/web_scraper.py](examples/web_scraper.py): Web crawler post-mortem — HTTP status breakdown, latency histogram, every failed URL browsable.
+
+## Optional
+
+- [tests/test_streaming_memory.py](tests/test_streaming_memory.py): The memory-safety contract as executable spec — 30 × 10 MiB writes must leave less than `total_written / 30` resident.
+- [tests/test_inline_self_contained.py](tests/test_inline_self_contained.py): The self-containment contract — no HTML attribute (src / href / etc.) may reference a remote URL.

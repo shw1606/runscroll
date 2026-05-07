@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "runscroll"
-version = "0.1.0"
+version = "1.0.0"
 description = "Single-file scrollable HTML report for one-shot batch jobs (ETL, ML training, migrations, crawlers). Streaming append-write. No server. No infra."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -41,7 +41,7 @@ keywords = [
     "logging",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

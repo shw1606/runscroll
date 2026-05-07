@@ -70,4 +70,4 @@ introduces an in-memory entry buffer or pins large payloads.
 - Self-hosted documentation site. README + AGENTS.md + llms.txt cover
   v1.0; mkdocs-style site can come later.
 
-[1.0.0]: https://github.com/shw4008/runscroll/releases/tag/v1.0.0
+[1.0.0]: https://github.com/shw1606/runscroll/releases/tag/v1.0.0

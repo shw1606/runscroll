@@ -83,10 +83,10 @@ runscroll = "runscroll.__main__:main"
 [project.urls]
 # These point at the GitHub repo where the package lives. Image refs in
 # README.md resolve relative to "Repository" on the rendered PyPI page.
-Homepage = "https://github.com/shw4008/runscroll"
-Repository = "https://github.com/shw4008/runscroll"
-Issues = "https://github.com/shw4008/runscroll/issues"
-Changelog = "https://github.com/shw4008/runscroll/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/shw1606/runscroll"
+Repository = "https://github.com/shw1606/runscroll"
+Issues = "https://github.com/shw1606/runscroll/issues"
+Changelog = "https://github.com/shw1606/runscroll/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/runscroll"]

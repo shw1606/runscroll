@@ -35,7 +35,16 @@ class Collector:
     The output file is opened in ``__init__`` and the HTML header is written
     immediately. Each ``add_*`` call appends serialized HTML and flushes; the
     in-Python representation of that entry is then released. Call ``save()``
-    when done — it writes the closing tags and closes the file.
+    when done — or use the Collector as a context manager (recommended), in
+    which case ``__exit__`` saves automatically and logs any exception.
+
+    Example:
+        >>> from runscroll import Collector
+        >>> with Collector("report.html", title="Daily ETL") as report:
+        ...     report.add_kv({"started_at": "2026-05-05T09:00"})
+        ...     with report.section("Extract"):
+        ...         report.add_text("loaded 1,234,567 rows")
+        ...     report.add_text("done", level="success")
     """
 
     def __init__(
@@ -46,6 +55,30 @@ class Collector:
         asset_writer: Optional[AssetWriter] = None,
         log_exceptions: bool = True,
     ) -> None:
+        """Open the output file and write the HTML header.
+
+        Args:
+            path: For ``mode="inline"``, the destination ``.html`` file.
+                For ``mode="directory"``, the destination directory; the
+                HTML lands at ``<path>/index.html`` and assets at
+                ``<path>/assets/``.
+            title: Shown in the document ``<title>`` and as the ``<h1>``.
+            mode: ``"inline"`` (default) embeds all assets as base64
+                data URLs in one file. ``"directory"`` writes assets as
+                separate files referenced via relative URLs.
+            asset_writer: Optional ``AssetWriter`` for ``directory`` mode
+                only — plug in S3 / GCS / etc. by implementing
+                ``write(rel_path, bytes)``. If omitted, a
+                ``LocalAssetWriter`` writing under ``path`` is used.
+            log_exceptions: When the Collector is used as a context
+                manager and the ``with`` block raises, log the traceback
+                as an error-level text entry before saving. Default True.
+
+        Example:
+            >>> from runscroll import Collector
+            >>> with Collector("out.html", title="My run") as report:
+            ...     report.add_text("hello")
+        """
         if mode not in ("inline", "directory"):
             raise ValueError(
                 f"mode must be 'inline' or 'directory', got {mode!r}"
@@ -91,7 +124,19 @@ class Collector:
             )
 
     def add_text(self, text: str, level: TextLevel = "info") -> None:
-        """Append a text log entry. Serialized and flushed immediately."""
+        """Append a text log entry, color-coded by level.
+
+        Args:
+            text: The text to record. HTML-escaped automatically.
+            level: One of ``"info"``, ``"debug"``, ``"warning"``,
+                ``"error"``, ``"success"``. Drives the color and the
+                level-filter chip in the rendered report.
+
+        Example:
+            >>> report.add_text("starting batch")
+            >>> report.add_text("3 rows dropped", level="warning")
+            >>> report.add_text("done", level="success")
+        """
         self._check_open()
         if level not in _VALID_LEVELS:
             raise ValueError(
@@ -105,26 +150,68 @@ class Collector:
         self._entry_count += 1
 
     def add_kv(self, mapping: Mapping[str, Any], title: str = "") -> None:
-        """Append a two-column key/value table."""
+        """Append a two-column key/value block. Ideal for run config,
+        hyperparameters, or summary stats.
+
+        Args:
+            mapping: The dict to render. Insertion order preserved.
+                Values are stringified via ``str()`` and HTML-escaped.
+            title: Optional heading shown above the kv block.
+
+        Example:
+            >>> report.add_kv(
+            ...     {"model": "resnet50", "lr": 3e-4, "bs": 64},
+            ...     title="Hyperparameters",
+            ... )
+        """
         self._check_open()
         self._file.write(render_kv(mapping, title=title))
         self._file.flush()
         self._entry_count += 1
 
     def add_code(self, code: str, lang: str = "", title: str = "") -> None:
-        """Append a code block. ``lang`` is recorded as ``data-rs-lang`` for
-        future syntax-highlighting hooks; no highlighting is applied here."""
+        """Append a preformatted code block.
+
+        Args:
+            code: The code to render. HTML-escaped; whitespace preserved.
+            lang: Recorded as ``data-rs-lang`` on the ``<pre>`` for
+                future syntax-highlighting hooks; no highlighting is
+                applied here.
+            title: Optional heading shown above the block.
+
+        Example:
+            >>> report.add_code(
+            ...     "SELECT count(*) FROM events WHERE day = '2026-05-05'",
+            ...     lang="sql",
+            ...     title="Validation query",
+            ... )
+        """
         self._check_open()
         self._file.write(render_code(code, lang=lang, title=title))
         self._file.flush()
         self._entry_count += 1
 
     def add_table(self, data: Sequence[Any], title: str = "") -> None:
-        """Append a tabular entry from a list of dicts or list of lists.
+        """Append a tabular entry from a ``list[dict]`` or ``list[list]``.
 
-        pandas DataFrame support is provided by the pandas adapter
-        (separate optional dependency); this stdlib path covers the
-        common log-friendly shapes."""
+        Args:
+            data: ``list[dict]`` — column union of all keys, insertion
+                order preserved, missing keys render as empty cells.
+                ``list[list]`` or ``list[tuple]`` — rendered without a
+                ``<thead>``; ragged rows allowed.
+            title: Optional heading shown above the table.
+
+        Example:
+            >>> report.add_table(
+            ...     [{"class": "cat", "precision": 0.91, "recall": 0.88},
+            ...      {"class": "dog", "precision": 0.94, "recall": 0.92}],
+            ...     title="Per-class metrics",
+            ... )
+
+        Note:
+            pandas DataFrames are not auto-converted here. Pass
+            ``df.to_dict("records")`` for a list-of-dicts rendering.
+        """
         self._check_open()
         self._file.write(render_table(data, title=title))
         self._file.flush()
@@ -136,12 +223,36 @@ class Collector:
         caption: str = "",
         title: str = "",
     ) -> None:
-        """Append an image entry. ``source`` can be bytes, a file path,
-        a PIL Image, or a numpy ndarray.
+        """Append an image entry.
 
-        In inline mode, base64 is streamed chunk-by-chunk into the HTML.
-        In directory mode, asset bytes are handed to the AssetWriter and
+        Args:
+            source: One of:
+                - ``bytes`` — already-encoded image bytes (PNG/JPEG/GIF/
+                  WebP/BMP auto-detected by magic bytes).
+                - ``str`` or ``Path`` — file path. Streamed from disk so
+                  large files don't load into memory.
+                - ``PIL.Image.Image`` — encoded to PNG bytes.
+                  Requires ``pip install runscroll[pil]``.
+                - ``numpy.ndarray`` — shape ``(H, W)`` / ``(H, W, 3)`` /
+                  ``(H, W, 4)``. ``float`` dtype is min-max normalized.
+                  Requires ``pip install runscroll[pil]``.
+            caption: Shown below the image. HTML-escaped.
+            title: Optional heading shown above the image. HTML-escaped.
+
+        In inline mode, base64 is streamed chunk-by-chunk into the HTML
+        — peak memory stays bounded regardless of image size. In
+        directory mode, the asset is handed to the ``AssetWriter`` and
         the HTML embeds a relative URL.
+
+        Example:
+            >>> # bytes (no extras needed)
+            >>> with open("plot.png", "rb") as f:
+            ...     report.add_image(f.read(), caption="my plot")
+            >>> # path (best for large files — streamed)
+            >>> report.add_image("/tmp/big_image.png")
+            >>> # PIL
+            >>> from PIL import Image
+            >>> report.add_image(Image.new("RGB", (8, 8), "red"))
         """
         self._check_open()
         if self.mode == "inline":
@@ -166,13 +277,32 @@ class Collector:
         description: str = "",
         close: bool = True,
     ) -> None:
-        """Append a figure entry.
+        """Append a figure entry. Supports matplotlib and plotly Figures.
 
-        Currently supports matplotlib Figures. Plotly and Bokeh are added
-        in later steps. ``close=True`` (default) releases the figure's
-        resources after encoding — the moulder pipeline that seeded
-        runscroll consistently followed every save with ``plt.close(fig)``,
-        so we absorb that pattern.
+        Args:
+            fig: A ``matplotlib.figure.Figure`` (rendered as an inline
+                PNG) or a ``plotly.graph_objects.Figure`` (rendered as
+                an interactive ``<div>`` with the plotly.js bundle
+                inlined exactly once per Collector).
+            title: Optional heading shown above the figure.
+            description: Optional caption shown below the title.
+            close: For matplotlib only. Calls ``plt.close(fig)`` after
+                encoding so pyplot's figure registry doesn't grow.
+                Default True (matches the convention seeding pipelines
+                established).
+
+        Requires the matching extra: ``pip install runscroll[matplotlib]``
+        or ``pip install runscroll[plotly]``.
+
+        Example:
+            >>> import matplotlib.pyplot as plt
+            >>> fig, ax = plt.subplots()
+            >>> ax.plot([1, 2, 3], [1, 4, 9])
+            >>> report.add_figure(fig, title="y = x^2")
+            >>> # Plotly works the same way:
+            >>> import plotly.graph_objects as go
+            >>> pf = go.Figure(go.Scatter(x=[1, 2, 3], y=[1, 4, 9]))
+            >>> report.add_figure(pf, title="interactive y = x^2")
         """
         self._check_open()
         cls = type(fig)
@@ -270,7 +400,17 @@ class Collector:
     # ------------------------------------------------------------------
 
     def section(self, name: str) -> "SectionContext":
-        """Return a context manager opening a (possibly nested) section."""
+        """Open a (possibly nested) section. Use as a context manager.
+
+        Sections can nest arbitrarily; the rendered report's client-side
+        TOC is built by scanning section data attributes at page load.
+
+        Example:
+            >>> with report.section("Stage 1"):
+            ...     report.add_text("...")
+            ...     with report.section("Sub-stage"):
+            ...         report.add_text("...")
+        """
         self._check_open()
         return SectionContext(self, name)
 
@@ -334,7 +474,22 @@ class Collector:
         return False  # never swallow
 
     def save(self) -> str:
-        """Write the closing tags, close the file, return the final path."""
+        """Write the closing tags, close the file, return the final path.
+
+        Idempotent — repeated calls return the same path without error.
+        Not needed when the Collector is used as a context manager;
+        ``__exit__`` calls this for you.
+
+        Returns:
+            For ``inline`` mode, the ``.html`` file path.
+            For ``directory`` mode, the directory path.
+
+        Example:
+            >>> c = Collector("out.html")
+            >>> c.add_text("hi")
+            >>> c.save()
+            'out.html'
+        """
         if self._closed:
             return str(self.path)
         self._write_footer()

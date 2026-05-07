@@ -6,6 +6,8 @@
 > self-contained HTML file out the other side. Mail it, drop it in S3,
 > attach it to a PR. No server. No account. No infrastructure.
 
+![runscroll rendered ML training run example](images/runscroll-ml.png)
+
 ## When to use this
 
 | Your situation                                          | runscroll? |
@@ -102,6 +104,8 @@ starting point.
 
 ### ML training run — [examples/ml_training_run.py](examples/ml_training_run.py)
 
+![ML training run screenshot](images/runscroll-ml.png)
+
 Loss curves, confusion matrix, per-class precision/recall, sample worst
 predictions as inline images. Exercises matplotlib + numpy + PIL + nested
 sections.
@@ -120,16 +124,24 @@ with Collector(out, title=f"Train run {run_id}") as report:
 
 ### Daily ETL — [examples/data_quality_etl.py](examples/data_quality_etl.py)
 
+![Daily ETL screenshot](images/runscroll-etl.png)
+
 Hourly volume, drop-rate warning with a sample of dropped rows, post-clean
 distribution. The single-file output ships in a mail attachment.
 
 ### Migration validation — [examples/migration_validation.py](examples/migration_validation.py)
 
+![Migration validation screenshot](images/runscroll-migration.png)
+
 Per-table validation with **interactive plotly distributions** — zoom,
 pan, hover tooltips, all in the single self-contained file. The plotly
 bundle is inlined exactly once even when there are dozens of figures.
+The `6 warnings` badge in the top-right corner is generated client-side
+by counting `rs-text-warning` entries.
 
 ### Web crawler — [examples/web_scraper.py](examples/web_scraper.py)
+
+![Web crawler screenshot](images/runscroll-crawler.png)
 
 Status-code breakdown, per-request latency histogram, every failed URL
 in a browsable table.

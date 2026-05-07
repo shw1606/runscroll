@@ -5,23 +5,61 @@ build-backend = "hatchling.build"
 [project]
 name = "runscroll"
 version = "0.1.0"
-description = "Turn one batch run into one scrollable HTML report."
+description = "Single-file scrollable HTML report for one-shot batch jobs (ETL, ML training, migrations, crawlers). Streaming append-write. No server. No infra."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-keywords = ["report", "html", "batch", "post-mortem", "logging", "etl", "ml"]
+authors = [{ name = "Hyunwoo Seo", email = "shw4008@gmail.com" }]
+keywords = [
+    # what it produces
+    "html-report",
+    "single-file",
+    "self-contained",
+    "scrollable",
+    "standalone",
+    # when it's used
+    "post-mortem",
+    "batch",
+    "one-shot",
+    "pipeline-report",
+    "audit",
+    "run-summary",
+    "snapshot",
+    "diagnostic",
+    # domains
+    "etl",
+    "ml-training",
+    "training-report",
+    "data-migration",
+    "data-quality",
+    "crawler",
+    # design properties
+    "streaming-write",
+    "no-server",
+    "report",
+    "html",
+    "logging",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Documentation",
+    "Topic :: Scientific/Engineering :: Visualization",
     "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
     "Topic :: System :: Logging",
+    "Topic :: System :: Monitoring",
+    "Typing :: Typed",
 ]
 dependencies = []
 
@@ -38,6 +76,14 @@ dev = [
     "pytest>=7.0",
     "psutil>=5.9",
 ]
+
+[project.urls]
+# These point at the GitHub repo where the package lives. Image refs in
+# README.md resolve relative to "Repository" on the rendered PyPI page.
+Homepage = "https://github.com/shw4008/runscroll"
+Repository = "https://github.com/shw4008/runscroll"
+Issues = "https://github.com/shw4008/runscroll/issues"
+Changelog = "https://github.com/shw4008/runscroll/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/runscroll"]

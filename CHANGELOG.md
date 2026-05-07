@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-05-07
+
+Documentation-only patch over 1.0.0. No code changes; the public API is
+unchanged.
+
+### Fixed
+
+- README example screenshots were broken on the PyPI project page —
+  PyPI's renderer does not auto-resolve relative image paths against
+  the configured `Repository` URL. Switched to absolute
+  `https://raw.githubusercontent.com/shw1606/runscroll/main/...`
+  references so the four recipe screenshots render correctly on PyPI,
+  GitHub, IDE markdown previews, and any other consumer.
+
+### Added
+
+- PyPI version / Python-versions / License badges at the top of the
+  README so the package's status is legible at a glance from both
+  GitHub and PyPI.
+
 ## [1.0.0] — 2026-05-07
 
 First public release. The public API listed below is **frozen for the
@@ -70,4 +90,5 @@ introduces an in-memory entry buffer or pins large payloads.
 - Self-hosted documentation site. README + AGENTS.md + llms.txt cover
   v1.0; mkdocs-style site can come later.
 
+[1.0.1]: https://github.com/shw1606/runscroll/releases/tag/v1.0.1
 [1.0.0]: https://github.com/shw1606/runscroll/releases/tag/v1.0.0

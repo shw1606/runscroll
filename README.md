@@ -1,12 +1,16 @@
 # runscroll
 
+[![PyPI](https://img.shields.io/pypi/v/runscroll.svg)](https://pypi.org/project/runscroll/)
+[![Python versions](https://img.shields.io/pypi/pyversions/runscroll.svg)](https://pypi.org/project/runscroll/)
+[![License: MIT](https://img.shields.io/pypi/l/runscroll.svg)](https://github.com/shw1606/runscroll/blob/main/LICENSE)
+
 > **runscroll — turn one batch run into one scrollable HTML report.**
 >
 > Sprinkle `report.add_*()` calls through your batch job. Get a single
 > self-contained HTML file out the other side. Mail it, drop it in S3,
 > attach it to a PR. No server. No account. No infrastructure.
 
-![runscroll rendered ML training run example](images/runscroll-ml.png)
+![runscroll rendered ML training run example](https://raw.githubusercontent.com/shw1606/runscroll/main/images/runscroll-ml.png)
 
 ## When to use this
 
@@ -104,7 +108,7 @@ starting point.
 
 ### ML training run — [examples/ml_training_run.py](examples/ml_training_run.py)
 
-![ML training run screenshot](images/runscroll-ml.png)
+![ML training run screenshot](https://raw.githubusercontent.com/shw1606/runscroll/main/images/runscroll-ml.png)
 
 Loss curves, confusion matrix, per-class precision/recall, sample worst
 predictions as inline images. Exercises matplotlib + numpy + PIL + nested
@@ -124,14 +128,14 @@ with Collector(out, title=f"Train run {run_id}") as report:
 
 ### Daily ETL — [examples/data_quality_etl.py](examples/data_quality_etl.py)
 
-![Daily ETL screenshot](images/runscroll-etl.png)
+![Daily ETL screenshot](https://raw.githubusercontent.com/shw1606/runscroll/main/images/runscroll-etl.png)
 
 Hourly volume, drop-rate warning with a sample of dropped rows, post-clean
 distribution. The single-file output ships in a mail attachment.
 
 ### Migration validation — [examples/migration_validation.py](examples/migration_validation.py)
 
-![Migration validation screenshot](images/runscroll-migration.png)
+![Migration validation screenshot](https://raw.githubusercontent.com/shw1606/runscroll/main/images/runscroll-migration.png)
 
 Per-table validation with **interactive plotly distributions** — zoom,
 pan, hover tooltips, all in the single self-contained file. The plotly
@@ -141,7 +145,7 @@ by counting `rs-text-warning` entries.
 
 ### Web crawler — [examples/web_scraper.py](examples/web_scraper.py)
 
-![Web crawler screenshot](images/runscroll-crawler.png)
+![Web crawler screenshot](https://raw.githubusercontent.com/shw1606/runscroll/main/images/runscroll-crawler.png)
 
 Status-code breakdown, per-request latency histogram, every failed URL
 in a browsable table.
